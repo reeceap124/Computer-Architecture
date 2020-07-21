@@ -1,6 +1,10 @@
 """CPU functionality."""
 
 import sys
+HLT = 0b00000001
+LDI = 0b10000010
+PRN = 0b01000111
+
 
 class CPU:
     """Main CPU class."""
@@ -10,11 +14,18 @@ class CPU:
         self.registry = [0] * 8
         self.RAM = [0] * 256
         self.pc = 0
+        self.running = False
 
     def ram_read(self, MAR):
         return self.RAM[MAR]
     def ram_write(self, MAR, MDR):
         self.RAM[MAR] = MDR
+    def hlt(self):
+        self.running = False
+    def ldi(self, a, b):
+        self.registry[a] = b
+    def prn(self, a):
+        print(int(a, 10))
 
     def load(self):
         """Load a program into memory."""
@@ -69,4 +80,17 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
+        self.running = True
+        while self.running:
+            IR = self.ram_read(self.pc)
+            operand_a = self.ram_read(self.pc + 1)
+            operand_b = self.ram_read(self.pc + 2)
+            #Figure out how to implement instructions
+            self.pc += 1
+
+        # Need to read memory address at PC
+        # Instruction Register (local variable here) stores what's held at the address
+        # Use ram_read to get bytes at PC+1 and PC+2 from RAM into vars operand_a and operand_b
+        #then perform actions need for the instruction
+        #update PC needs to then be updated
         pass
