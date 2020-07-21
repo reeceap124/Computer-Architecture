@@ -1,31 +1,34 @@
 """CPU functionality."""
 
 import sys
+
 HLT = 0b00000001
 LDI = 0b10000010
 PRN = 0b01000111
 
-
 class CPU:
     """Main CPU class."""
+    
 
     def __init__(self):
         """Construct a new CPU."""
-        self.registry = [0] * 8
-        self.RAM = [0] * 256
+        self.reg = [0] * 8
+        self.ram = [0] * 256
         self.pc = 0
         self.running = False
 
     def ram_read(self, MAR):
-        return self.RAM[MAR]
+        return self.ram[MAR]
     def ram_write(self, MAR, MDR):
-        self.RAM[MAR] = MDR
+        self.ram[MAR] = MDR
     def hlt(self):
         self.running = False
     def ldi(self, a, b):
-        self.registry[a] = b
+        self.reg[a] = b
+        self.pc += 2
     def prn(self, a):
-        print(int(a, 10))
+        print(self.reg[a])
+        self.pc += 1
 
     def load(self):
         """Load a program into memory."""
@@ -37,7 +40,7 @@ class CPU:
         program = [
             # From print8.ls8
             0b10000010, # LDI R0,8
-            0b00000000, # Registry 0
+            0b00000000, # reg 0
             0b00001000, # Value assigned
             0b01000111, # PRN R0
             0b00000000,
@@ -85,12 +88,20 @@ class CPU:
             IR = self.ram_read(self.pc)
             operand_a = self.ram_read(self.pc + 1)
             operand_b = self.ram_read(self.pc + 2)
-            #Figure out how to implement instructions
+            if IR == HLT:
+                self.hlt()
+            elif IR == LDI:
+                self.ldi(operand_a, operand_b)
+            elif IR == PRN:
+                self.prn(operand_a)
+            else:
+                print("Automatically Exited")
+                self.hlt()
             self.pc += 1
+            #Figure out how to implement instructions
 
         # Need to read memory address at PC
         # Instruction Register (local variable here) stores what's held at the address
         # Use ram_read to get bytes at PC+1 and PC+2 from RAM into vars operand_a and operand_b
         #then perform actions need for the instruction
         #update PC needs to then be updated
-        pass
