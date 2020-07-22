@@ -5,6 +5,7 @@ import sys
 HLT = 0b00000001
 LDI = 0b10000010
 PRN = 0b01000111
+MUL = 0b10100010
 
 class CPU:
     """Main CPU class."""
@@ -16,41 +17,51 @@ class CPU:
         self.ram = [0] * 256
         self.pc = 0
         self.running = False
+        self.branchTable = {
+            HLT : self.hlt,
+            LDI : self.ldi,
+            PRN : self.prn,
+            MUL : self.mul
+        }
 
     def ram_read(self, MAR):
         return self.ram[MAR]
+        
     def ram_write(self, MAR, MDR):
         self.ram[MAR] = MDR
-    def hlt(self):
+
+    def hlt(self, a = None , b = None):
         self.running = False
+
     def ldi(self, a, b):
         self.reg[a] = b
         self.pc += 2
-    def prn(self, a):
+
+    def prn(self, a, b = None):
         print(self.reg[a])
         self.pc += 1
 
-    def load(self):
+    def mul(self, a, b):
+        self.reg[a] = self.reg[a] * self.reg[b]
+        self.pc += 2
+
+    def load(self, program):
         """Load a program into memory."""
 
         address = 0
 
         # For now, we've just hardcoded a program:
 
-        program = [
-            # From print8.ls8
-            0b10000010, # LDI R0,8
-            0b00000000, # reg 0
-            0b00001000, # Value assigned
-            0b01000111, # PRN R0
-            0b00000000,
-            0b00000001, # HLT
-        ]
-
-        for instruction in program:
-            self.ram[address] = instruction
-            address += 1
-
+        program = program
+        with open(program) as f:
+            for line in f:
+                command = line.split('#')
+                command = command[0].strip()
+                if command == '':
+                    continue #if line is empty string skip to next iteration of loop
+                command = int(command, 2)
+                self.ram[address] = command
+                address += 1
 
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
@@ -88,12 +99,8 @@ class CPU:
             IR = self.ram_read(self.pc)
             operand_a = self.ram_read(self.pc + 1)
             operand_b = self.ram_read(self.pc + 2)
-            if IR == HLT:
-                self.hlt()
-            elif IR == LDI:
-                self.ldi(operand_a, operand_b)
-            elif IR == PRN:
-                self.prn(operand_a)
+            if IR in self.branchTable:
+                self.branchTable[IR](operand_a, operand_b)
             else:
                 print("Automatically Exited")
                 self.hlt()
