@@ -6,6 +6,8 @@ HLT = 0b00000001
 LDI = 0b10000010
 PRN = 0b01000111
 MUL = 0b10100010
+PUSH = 0b01000101
+POP = 0b01000110
 
 class CPU:
     """Main CPU class."""
@@ -16,12 +18,15 @@ class CPU:
         self.reg = [0] * 8
         self.ram = [0] * 256
         self.pc = 0
+        self.sp = 7 #points to register not ram location
         self.running = False
         self.branchTable = {
             HLT : self.hlt,
             LDI : self.ldi,
             PRN : self.prn,
-            MUL : self.mul
+            MUL : self.mul,
+            PUSH : self.push,
+            POP : self.pop
         }
 
     def ram_read(self, MAR):
@@ -29,6 +34,20 @@ class CPU:
         
     def ram_write(self, MAR, MDR):
         self.ram[MAR] = MDR
+    
+    def push(self, a, b):
+        reg = a
+        value = self.reg[reg]
+        self.reg[self.sp] -=1
+        self.ram_write(self.reg[self.sp], value)
+        self.pc += 1
+    
+    def pop(self, a, b):
+        reg = a
+        value = self.ram_read(self.reg[self.sp])
+        self.reg[reg] = value
+        self.reg[self.sp] +=1
+        self.pc += 1
 
     def hlt(self, a = None , b = None):
         self.running = False
