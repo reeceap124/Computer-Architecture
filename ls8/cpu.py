@@ -8,6 +8,9 @@ PRN = 0b01000111
 MUL = 0b10100010
 PUSH = 0b01000101
 POP = 0b01000110
+CALL = 0b01010000
+RET = 0b00010001
+ADD = 0b10100000
 
 class CPU:
     """Main CPU class."""
@@ -26,7 +29,10 @@ class CPU:
             PRN : self.prn,
             MUL : self.mul,
             PUSH : self.push,
-            POP : self.pop
+            POP : self.pop,
+            CALL : self.call,
+            RET : self.ret,
+            ADD : self.add
         }
 
     def ram_read(self, MAR):
@@ -40,29 +46,44 @@ class CPU:
         value = self.reg[reg]
         self.reg[self.sp] -=1
         self.ram_write(self.reg[self.sp], value)
-        self.pc += 1
+        self.pc += 2
     
     def pop(self, a, b):
         reg = a
         value = self.ram_read(self.reg[self.sp])
         self.reg[reg] = value
         self.reg[self.sp] +=1
-        self.pc += 1
+        self.pc += 2
+
+    def call(self, a, b):
+        reg = a
+        after = self.pc + 2
+        self.pc = self.reg[reg]
+        self.reg[self.sp] -= 1
+        self.ram_write(self.reg[self.sp], after)
+
+    def ret(self, a, b):
+        self.pc = self.ram[self.reg[self.sp]]
+        self.reg[self.sp] += 1
 
     def hlt(self, a = None , b = None):
         self.running = False
 
     def ldi(self, a, b):
         self.reg[a] = b
-        self.pc += 2
+        self.pc += 3
 
     def prn(self, a, b = None):
         print(self.reg[a])
-        self.pc += 1
+        self.pc += 2
+
+    def add(self, a , b):
+        self.alu('ADD', a, b)
+        self.pc+=3
 
     def mul(self, a, b):
         self.reg[a] = self.reg[a] * self.reg[b]
-        self.pc += 2
+        self.pc += 3
 
     def load(self, program):
         """Load a program into memory."""
@@ -114,6 +135,8 @@ class CPU:
     def run(self):
         """Run the CPU."""
         self.running = True
+        # breakpoint()
+
         while self.running:
             IR = self.ram_read(self.pc)
             operand_a = self.ram_read(self.pc + 1)
@@ -123,7 +146,7 @@ class CPU:
             else:
                 print("Automatically Exited")
                 self.hlt()
-            self.pc += 1
+            # breakpoint()
             #Figure out how to implement instructions
 
         # Need to read memory address at PC
