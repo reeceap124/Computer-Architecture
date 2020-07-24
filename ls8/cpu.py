@@ -62,7 +62,9 @@ class CPU:
             self.pc += 2
     
     def jne(self, a, b = None):
-        if self.flag != 0b1 or self.flag != 0b0:
+        if self.flag == 0b1:
+            self.pc += 2
+        elif self.flag != 0b0:
             self.pc = self.reg[a]
     
     def jmp(self, a, b):
