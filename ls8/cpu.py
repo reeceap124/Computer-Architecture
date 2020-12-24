@@ -11,6 +11,10 @@ POP = 0b01000110
 CALL = 0b01010000
 RET = 0b00010001
 ADD = 0b10100000
+CMP = 0b10100111
+JMP = 0b01010100
+JEQ = 0b01010101
+JNE = 0b01010110
 
 class CPU:
     """Main CPU class."""
@@ -22,6 +26,7 @@ class CPU:
         self.ram = [0] * 256
         self.pc = 0
         self.sp = 7 #points to register not ram location
+        self.flag = 0
         self.running = False
         self.branchTable = {
             HLT : self.hlt,
@@ -32,8 +37,39 @@ class CPU:
             POP : self.pop,
             CALL : self.call,
             RET : self.ret,
-            ADD : self.add
+            ADD : self.add,
+            CMP : self.do_cmp,
+            JEQ : self.jeq,
+            JNE : self.jne,
+            JMP : self.jmp
         }
+
+    def do_cmp(self, a, b):
+        cmp_a = self.reg[a]
+        cmp_b = self.reg[b]
+        if cmp_a == cmp_b:
+            self.flag = 0b00000001 # E flag
+        if cmp_a < cmp_b:
+            self.flag = 0b00000010 # L Flag
+        if cmp_a > cmp_b:
+            self.flag = 0b00000100 # G Flag
+        self.pc += 3
+    
+    def jeq(self, a, b):
+        if self.flag == 0b00000001:
+            self.pc = self.reg[a]
+        else:
+            self.pc += 2
+    
+    def jne(self, a, b = None):
+        if self.flag == 0b1:
+            self.pc += 2
+        elif self.flag != 0b0:
+            self.pc = self.reg[a]
+    
+    def jmp(self, a, b):
+        self.pc=self.reg[a]
+
 
     def ram_read(self, MAR):
         return self.ram[MAR]
@@ -41,14 +77,14 @@ class CPU:
     def ram_write(self, MAR, MDR):
         self.ram[MAR] = MDR
     
-    def push(self, a, b):
+    def push(self, a, b = None):
         reg = a
         value = self.reg[reg]
         self.reg[self.sp] -=1
         self.ram_write(self.reg[self.sp], value)
         self.pc += 2
     
-    def pop(self, a, b):
+    def pop(self, a, b = None):
         reg = a
         value = self.ram_read(self.reg[self.sp])
         self.reg[reg] = value
